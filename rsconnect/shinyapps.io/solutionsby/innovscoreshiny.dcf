@@ -1,0 +1,12 @@
+name: innovscoreshiny
+title: innovscoreshiny
+username: solutionsby
+account: solutionsby
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 10237732
+bundleId: 7821569
+url: https://solutionsby.shinyapps.io/innovscoreshiny/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
