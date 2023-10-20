@@ -1617,14 +1617,14 @@
     },
     "trelliscope": {
       "Package": "trelliscope",
-      "Version": "0.1.3.1",
+      "Version": "0.1.3.3",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "trelliscope",
       "RemoteUsername": "solutionsbyconnections",
       "RemoteRef": "HEAD",
-      "RemoteSha": "5f0b2810f440e94b826e97b3fb820f1d07609523",
+      "RemoteSha": "f2d13cd58baceb3934ac0448be4d503d5c75cfa0",
       "Requirements": [
         "R",
         "R6",
@@ -1647,7 +1647,7 @@
         "tidyr",
         "vctrs"
       ],
-      "Hash": "d5b141aa1ba3d055008ed0bcb1034081"
+      "Hash": "476ceaca927b5883933aa35e2bc57437"
     },
     "tzdb": {
       "Package": "tzdb",

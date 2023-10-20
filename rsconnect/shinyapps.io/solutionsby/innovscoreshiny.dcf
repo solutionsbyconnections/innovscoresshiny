@@ -5,7 +5,7 @@ account: solutionsby
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 10237732
-bundleId: 7830764
+bundleId: 7831048
 url: https://solutionsby.shinyapps.io/innovscoreshiny/
 version: 1
 asMultiple: FALSE
