@@ -2,7 +2,7 @@
 # This is a Shiny web application. You can run the application by clicking
 # the 'Run App' button above.  Deploying to shinyio need to have this in a github.
 #
-# Find out more about building applications with Shiny here:
+# Find out more about building applications with Shiny here:  test
 #
 #    http://shiny.rstudio.com/
 #
