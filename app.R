@@ -1,8 +1,8 @@
 #
 # This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.  Deploying to shinyio need to have this in a github.
+# the 'Run App' button above.
 #
-# Find out more about building applications with Shiny here:  test2
+# Find out more about building applications with Shiny here:
 #
 #    http://shiny.rstudio.com/
 #
@@ -15,6 +15,7 @@ library(mime)
 library(purrr)
 
 innovresults  <- readRDS("Data/innovdf.RDS")
+
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -75,8 +76,7 @@ server <- function(input, output) {
         ggplot2::annotate("text", x = 0.75, y = 2.5, alpha = 0.35, size = 4, label = "3 - Innovators") +
         ggplot2::annotate("text", x = 0.75, y = 7.5, alpha = 0.35, size = 4, label = "4 - Leaders") +
         geom_point(aes(x = mean(Innovation), 
-                       y = mean(ScaledValuation), 
-                       size = 4
+                       y = mean(ScaledValuation)
                        ))+
         facet_panels(ggplot2::vars(Category), 
                      add_plot_metrics = TRUE) 
