@@ -11,7 +11,6 @@ library(shiny)
 library(trelliscope)
 library(tidyverse)
 library(plotly)
-library(mime)
 library(purrr)
 
 innovresults  <- readRDS("Data/innovdf.RDS")
@@ -92,7 +91,7 @@ server <- function(input, output) {
     tdf <- left_join(tdf, innovstats, by = "Category") |>
       set_default_layout(ncol = 2) 
     
-    write_trelliscope(tdf)
+    write_trelliscope(tdf, jsonp = FALSE, force_write = FALSE)
     
     observeEvent(input$goButton, {
       output$iframe <- renderUI({

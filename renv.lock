@@ -933,13 +933,18 @@
     },
     "mime": {
       "Package": "mime",
-      "Version": "0.12",
-      "Source": "Repository",
-      "Repository": "CRAN",
+      "Version": "0.12.5.2",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "mime",
+      "RemoteUsername": "solutionsbyconnections",
+      "RemoteRef": "HEAD",
+      "RemoteSha": "892f6eb0bec469e8d412c58716b8506616172bb0",
       "Requirements": [
         "tools"
       ],
-      "Hash": "18e9c28c1d3ca1560ce30658b22ce104"
+      "Hash": "2ba9f27d0110b858359b63988d19a57f"
     },
     "modelr": {
       "Package": "modelr",
