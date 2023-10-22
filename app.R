@@ -14,6 +14,7 @@ library(plotly)
 library(purrr)
 
 innovresultsin  <- readRDS("Data/innovdf.RDS")
+innovresultsin <- dplyr::mutate(innovresultsin, OutlierColor = ifelse(Outlier == "Yes", 8, 4))
 
 
 # Define UI for application that draws a histogram
@@ -68,7 +69,7 @@ server <- function(input, output) {
     # generate bins based on input$bins from ui.R
     pp <- innovresults |> ggplot(aes(x = Innovation, 
                                      y = ScaledValuation, 
-                                     colour = Outlier,
+                                     colour = OutlierColor,
                                      text =  paste("Company: ", Company, 
                                                    "<br>Class: ", Class,  
                                                    "<br>Site: ", Site, 
