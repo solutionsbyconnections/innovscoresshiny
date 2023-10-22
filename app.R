@@ -13,7 +13,7 @@ library(tidyverse)
 library(plotly)
 library(purrr)
 
-innovresults  <- readRDS("Data/innovdf.RDS")
+innovresultsin  <- readRDS("Data/innovdf.RDS")
 
 
 # Define UI for application that draws a histogram
@@ -25,20 +25,37 @@ ui <- fluidPage(
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
         sidebarPanel(
-          selectInput("select", h3("Select box"), choices = list("Choice 1" = 1, "Choice 2" = 2, "Choice 3" = 3), selected = 1),
+          selectInput("select", h3("Select Data Filter"), choices = list("All" = 1, "Outliers" = 2, "Series B or Greater" = 3), selected = 1),
           actionButton("goButton", "Go")
         ),
 
         # Show a plot of the generated distribution
         mainPanel(
-           uiOutput("iframe")  #plotOutput("distPlot")
+           uiOutput("iframe") 
         )
     )
 )
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-  
+  observeEvent(input$select, {
+    theselection <- input$select
+    print(theselection)
+    
+    # Filter innovresults based on selection of filter
+    if (theselection > 1) {
+      if (theselection == 2) { # Filter to only include Outliers
+        innovresults <- dplyr::filter(innovresultsin, innovresultsin$Outlier == "Yes")
+      } else {
+        if (theselection == 3) {
+          innovresults <- dplyr::filter(innovresultsin, innovresultsin$Series >= "Series B")
+        }
+      } 
+    } else {
+      innovresults <-innovresultsin
+    } 
+    
+    print(nrow(innovresults))
     innovstats <- innovresults |>
       summarise(
         median_innovation = median(Innovation),
@@ -47,8 +64,7 @@ server <- function(input, output) {
         median_valuation = median(Valuation),
         .by = Category
       )
-
-    #output$distPlot <- renderPlot({
+    
     # generate bins based on input$bins from ui.R
     pp <- innovresults |> ggplot(aes(x = Innovation, 
                                      y = ScaledValuation, 
@@ -83,25 +99,20 @@ server <- function(input, output) {
                             plotly_args= c(tooltip = "text"),
                             plotly_cfg = c(displayModeBar = FALSE)) 
     
-    #paneldf
-    
     tdf <- as_trelliscope_df(paneldf, name = "Innovation Scoring",
-                             description = "Innovation Scores - Calculated by Category",
-                             path = "www")
+                             description = "Innovation Scores - Calculated by Category", path = "www"
+    )
     tdf <- left_join(tdf, innovstats, by = "Category") |>
       set_default_layout(ncol = 2) 
     
-    write_trelliscope(tdf, jsonp = FALSE, force_write = FALSE)
-    
-    observeEvent(input$goButton, {
-      output$iframe <- renderUI({
-        print("got here")
-        #view_trelliscope(tdf)
-        tags$iframe(src = "index.html", style="border: none; width: 100%; height: 1200px;") #file:///output/index.html
-      })
+    write_trelliscope(tdf, jsonp = TRUE, force_write = TRUE)
+  })
+  
+  observeEvent(input$goButton, {
+    output$iframe <- renderUI({
+      tags$iframe(src = "index.html", style="border: none; width: 100%; height: 1200px;")
     })
-      
-    #view_trelliscope(tdf)  #renderPlot({view_trelliscope(tdf)})
+  })
 }
 
 # Run the application 
