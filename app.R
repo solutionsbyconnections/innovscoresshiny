@@ -16,6 +16,14 @@ library(purrr)
 innovresultsin  <- readRDS("Data/innovdf.RDS")
 innovresultsin <- dplyr::mutate(innovresultsin, OutlierColor = ifelse(Outlier == "Yes", 8, 4))
 
+innovresultsin <- innovresultsin %>%
+  group_by(Category) %>%
+  mutate(median_innovation = median(Innovation)) %>%
+  mutate(median_scaledvaluation = median(ScaledValuation)) %>%
+  ungroup()
+
+
+
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -88,9 +96,6 @@ server <- function(input, output) {
       ggplot2::annotate("text", x = 0.25, y = 7.5, alpha = 0.35, size = 4, label = "2 - Fully Valued") +
       ggplot2::annotate("text", x = 0.75, y = 2.5, alpha = 0.35, size = 4, label = "3 - Innovators") +
       ggplot2::annotate("text", x = 0.75, y = 7.5, alpha = 0.35, size = 4, label = "4 - Leaders") +
-      geom_point(aes(x = mean(Innovation), 
-                     y = mean(ScaledValuation)
-      ))+
       facet_panels(ggplot2::vars(Category), 
                    add_plot_metrics = TRUE) 
     
@@ -104,6 +109,7 @@ server <- function(input, output) {
                              description = "Innovation Scores - Calculated by Category", path = "www"
     )
     tdf <- left_join(tdf, innovstats, by = "Category") |>
+      set_default_labels( "Category") |>
       set_default_layout(ncol = 2) 
     
     write_trelliscope(tdf, jsonp = TRUE, force_write = TRUE)
