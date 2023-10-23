@@ -12,6 +12,7 @@ library(trelliscope)
 library(tidyverse)
 library(plotly)
 library(purrr)
+library(DT)
 
 innovresultsin  <- readRDS("Data/innovdf.RDS")
 innovresultsin <- dplyr::mutate(innovresultsin, OutlierColor = ifelse(Outlier == "Yes", 8, 4))
@@ -23,7 +24,7 @@ innovresultsin <- innovresultsin %>%
   ungroup()
 
 
-
+dttable <- innovresultsin
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -35,18 +36,22 @@ ui <- fluidPage(
     sidebarLayout(
         sidebarPanel(
           selectInput("select", h3("Select Data Filter"), choices = list("All" = 1, "Outliers" = 2, "Series B or Greater" = 3), selected = 1),
-          actionButton("goButton", "Go")
+          #actionButton("goButton", "Go")
+          
+          #actionButton("view_table", "View Table")
         ),
 
         # Show a plot of the generated distribution
         mainPanel(
-           uiOutput("iframe") 
+          uiOutput("iframe"),
+          DTOutput("datatable")
         )
     )
 )
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
+  #innovresults <-innovresultsin
   observeEvent(input$select, {
     theselection <- input$select
     print(theselection)
@@ -64,7 +69,12 @@ server <- function(input, output) {
       innovresults <-innovresultsin
     } 
     
+    # Select the subset to view
+    dttable <- innovresults |>
+      dplyr::select(Company, Site, Category, Class, Series, Funding, Valuation, Innovation, ScaledValuation, Rank, Outlier, Date)
+    
     print(nrow(innovresults))
+    print(nrow(dttable))
     innovstats <- innovresults |>
       summarise(
         median_innovation = median(Innovation),
@@ -87,6 +97,7 @@ server <- function(input, output) {
                                                    "<br>Sentimaent: ", Sentiment, 
                                                    "<br>Date: ", Date))) +
       geom_point() +
+      
       theme_bw()+
       
       theme(legend.position="none") +
@@ -113,13 +124,43 @@ server <- function(input, output) {
       set_default_layout(ncol = 2) 
     
     write_trelliscope(tdf, jsonp = TRUE, force_write = TRUE)
-  })
-  
-  observeEvent(input$goButton, {
+    
+    # Render the selected plot
     output$iframe <- renderUI({
       tags$iframe(src = "index.html", style="border: none; width: 100%; height: 1200px;")
     })
+    
+    # Render the data table
+    output$datatable <- DT::renderDT({
+      datatable(dttable, selection = "single", filter = "top",
+                options = list(
+                  columnDefs = list(
+                    list(
+                      targets = 2, 
+                      render = JS("function(data, type, row, meta) {
+                          return '<a href=\"' + row[2] + '\" target=\"_blank\">' + data + '</a>';
+                      }"
+                 )))))
+    })
   })
+  
+  
+  
+  #observeEvent(input$goButton, {
+    
+    
+  #})
+  
+  
+  #observeEvent(input$view_table, {
+    # This will open the table in a new browser tab/window.
+  #  shiny::showModal(shiny::modalDialog(
+  #    DT::dataTableOutput('mytable'),
+  #    size = "l"
+  #  ))
+  #})
+  
+  
 }
 
 # Run the application 
