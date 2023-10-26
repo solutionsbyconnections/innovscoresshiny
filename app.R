@@ -13,6 +13,8 @@ library(tidyverse)
 library(plotly)
 library(purrr)
 library(DT)
+library(gtsummary)
+library(gtExtras)
 
 innovresultsin  <- readRDS("Data/innovdf.RDS")
 innovresultsin <- dplyr::mutate(innovresultsin, OutlierColor = ifelse(Outlier == "Yes", 8, 4))
@@ -36,6 +38,7 @@ ui <- fluidPage(
     sidebarLayout(
         sidebarPanel(
           selectInput("select", h3("Select Data Filter"), choices = list("All" = 1, "Outliers" = 2, "Series B or Greater" = 3), selected = 1),
+          uiOutput("statplot")
           #actionButton("goButton", "Go")
           
           #actionButton("view_table", "View Table")
@@ -142,6 +145,11 @@ server <- function(input, output) {
                       }"
                  )))))
     })
+    
+    output$statplot <- renderUI({
+      gt_plt_summary(dttable, title = "Summary Stats")
+    })
+    
   })
   
   
