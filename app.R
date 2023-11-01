@@ -15,8 +15,55 @@ library(purrr)
 library(DT)
 library(gtsummary)
 library(gtExtras)
+library(mongolite)
+#
+print(serverInfo())
+inserverflag <- serverInfo()$shinyServer
+
+if (inserverflag) {
+  print("Running in Shiny Server")
+} else {
+  print("Running locally")
+  
+  innovresultscon <- mongo(collection = "innovresultsactive",
+                           url = "mongodb://roberts-macbook-pro.local:27017/cyberinnovation",
+                           verbose = FALSE )
+  
+  innovresults <- innovresultscon$find('{}',
+                                       fields = '{"_row": 0,
+                                   "_id": 0,
+                                   "Summary": 0,
+                                   "SecondaryTopicCat": 0,
+                                   "CategorySignature": 0,
+                                   "KeyPhrases": 0,
+                                   "AllUniquenessInnovPhrases": 0,
+                                   "AllScaledValuation": 0,
+                                   "AllInnovatorValuationRank": 0,
+                                   "AllOutlierValuation": 0,
+                                   "UniquenessSignature": 0 }')
+  
+  innovresults$rundate <- as.Date(innovresults$rundate)
+  innovresults$BestFitCategory <- str_replace(innovresults$BestFitCategory, "Vertical-", "")
+  innovresults$BestFitCategory <- str_replace(innovresults$BestFitCategory, "Finance", "")
+  
+  colnames(innovresults) <- c("Company", "Site", "Category", "Class", "Series",  "Funding", "Valuation", "Innovation",  "ScaledValuation", "Rank", "Outlier", "Sentiment", "Date")
+  
+  
+  #  arrange(Category, group_by = TRUE)
+  
+  saveRDS(innovresults, "Data/innovdf.RDS")
+}
 
 innovresultsin  <- readRDS("Data/innovdf.RDS")
+
+listofdates <- innovresultsin$Date %>% 
+  unique() %>%
+  sort(decreasing = TRUE)
+print(listofdates)
+
+# the selection list
+listofmodes <- c("All", "Outliers", "Late Stage Companies", "Early Stage Companies")
+
 innovresultsin <- dplyr::mutate(innovresultsin, OutlierColor = ifelse(Outlier == "Yes", 8, 4))
 
 innovresultsin <- innovresultsin %>%
@@ -37,9 +84,11 @@ ui <- fluidPage(
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
         sidebarPanel(
-          selectInput("select", h3("Select Data Filter"), choices = list("All" = 1, "Outliers" = 2, "Series B or Greater" = 3), selected = 1),
+          actionButton("goButton", "Click to Visualize"),
+          selectInput("dateInput", h3("Choose a date:"), choices = listofdates),
+          selectInput("select", h3("Select Data Filter"), choices = listofmodes),
           uiOutput("statplot")
-          #actionButton("goButton", "Go")
+          
           
           #actionButton("view_table", "View Table")
         ),
@@ -54,27 +103,31 @@ ui <- fluidPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-  #innovresults <-innovresultsin
-  observeEvent(input$select, {
+  observeEvent(input$goButton, {
+    thedate <- input$dateInput
+    print(thedate)
+    # Select the date of interest
+    innovresultsin <- dplyr::filter(innovresultsin, innovresultsin$Date == thedate)
+    # The select the display mode
     theselection <- input$select
     print(theselection)
     
     # Filter innovresults based on selection of filter
-    if (theselection > 1) {
-      if (theselection == 2) { # Filter to only include Outliers
-        innovresults <- dplyr::filter(innovresultsin, innovresultsin$Outlier == "Yes")
-      } else {
-        if (theselection == 3) {
-          innovresults <- dplyr::filter(innovresultsin, innovresultsin$Series >= "Series B")
-        }
-      } 
-    } else {
+    if (theselection == listofmodes[1]) { 
       innovresults <-innovresultsin
-    } 
+    } else if (theselection == listofmodes[2]) { 
+      innovresults <- dplyr::filter(innovresultsin, innovresultsin$Outlier == "Yes")
+    } else if (theselection == listofmodes[3]) {
+      innovresults <- dplyr::filter(innovresultsin, innovresultsin$Series >= "Series B")
+    } else if (theselection == listofmodes[4]) {
+      innovresults <- dplyr::filter(innovresultsin, innovresultsin$Series < "Series B")
+    } else {
+      innovresults <- innovresultsin
+    }
     
     # Select the subset to view
     dttable <- innovresults |>
-      dplyr::select(Company, Site, Category, Class, Series, Funding, Valuation, Innovation, ScaledValuation, Rank, Outlier, Date)
+      dplyr::select(Company, Site, Category, Class, Series, Funding, Valuation, Innovation, ScaledValuation, Rank, Outlier, Sentiment, Date)
     
     print(nrow(innovresults))
     print(nrow(dttable))
@@ -99,7 +152,7 @@ server <- function(input, output) {
                                                    "<br>Valuation: ", Valuation,
                                                    "<br>Sentimaent: ", Sentiment, 
                                                    "<br>Date: ", Date))) +
-      geom_point() +
+      geom_point(aes(size = Sentiment)) +
       
       theme_bw()+
       
@@ -120,7 +173,7 @@ server <- function(input, output) {
                             plotly_cfg = c(displayModeBar = FALSE)) 
     
     tdf <- as_trelliscope_df(paneldf, name = "Innovation Scoring",
-                             description = "Innovation Scores - Calculated by Category", path = "www"
+                             description = paste("Innovation Scores - Calculated by Category with filter: ", theselection, " for: ", thedate  ), path = "www"
     )
     tdf <- left_join(tdf, innovstats, by = "Category") |>
       set_default_labels( "Category") |>
@@ -136,39 +189,32 @@ server <- function(input, output) {
     # Render the data table
     output$datatable <- DT::renderDT({
       datatable(dttable, selection = "single", filter = "top",
+                extensions = 'Buttons', 
                 options = list(
+                  dom = 'lBfrtip',
+                  buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                  pageLength = 10,               # Initial number of rows displayed
+                  lengthMenu = list(c(10, 25, 50, -1),   # Values for the dropdown
+                                    c('10', '25', '50', 'All')),
+                  #language = list(lengthMenu = "_MENU_  "),
+                  #
                   columnDefs = list(
                     list(
                       targets = 2, 
                       render = JS("function(data, type, row, meta) {
                           return '<a href=\"' + row[2] + '\" target=\"_blank\">' + data + '</a>';
                       }"
-                 )))))
+                 ))))
+                
+                )
     })
     
+    # Render the stats plot
     output$statplot <- renderUI({
       gt_plt_summary(dttable, title = "Summary Stats")
     })
     
   })
-  
-  
-  
-  #observeEvent(input$goButton, {
-    
-    
-  #})
-  
-  
-  #observeEvent(input$view_table, {
-    # This will open the table in a new browser tab/window.
-  #  shiny::showModal(shiny::modalDialog(
-  #    DT::dataTableOutput('mytable'),
-  #    size = "l"
-  #  ))
-  #})
-  
-  
 }
 
 # Run the application 
